@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Formateurs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .sorting {
+            cursor: pointer;
+        }
+        .sorting:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/header') %>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Gestion des Formateurs</h1>
+
+        <div class="search-container">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un formateur...">
+                </div>
+                <div class="col-md-4">
+                    <select id="filterSelect" class="form-select">
+                        <option value="">Tous les domaines</option>
+                        <% domaines.forEach(function(domaine) { %>
+                            <option value="<%= domaine._id %>"><%= domaine.nom %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <a href="/formateurs/add" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle"></i> Ajouter
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="searchResults" class="list-group mb-3" style="display:none;"></div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th class="sorting" data-sort="code_formateur">Code <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sorting" data-sort="nom">Nom <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sorting" data-sort="prenom">Prénom <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sorting" data-sort="email">Email <i class="bi bi-arrow-down-up"></i></th>
+                        <th>Téléphone</th>
+                        <th>Domaine</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="formateursTableBody">
+                    <% formateurs.forEach(function(formateur) { %>
+                        <tr>
+                            <td><%= formateur.code_formateur %></td>
+                            <td><%= formateur.nom %></td>
+                            <td><%= formateur.prenom %></td>
+                            <td><%= formateur.email %></td>
+                            <td><%= formateur.telephone %></td>
+                            <td><%= formateur.domaine ? formateur.domaine.nom : 'N/A' %></td>
+                            <td>
+                                <a href="/formateurs/edit/<%= formateur._id %>" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="/formateurs/delete/<%= formateur._id %>" method="POST" class="d-inline">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce formateur ?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const filterSelect = document.getElementById('filterSelect');
+            const tableBody = document.getElementById('formateursTableBody');
+            const sortingHeaders = document.querySelectorAll('.sorting');
+
+            let formateurs = <%- JSON.stringify(formateurs) %>;
+            let currentSort = { field: null, direction: 'asc' };
+
+            function renderTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filterValue = filterSelect.value;
+
+                const filteredFormateurs = formateurs.filter(formateur => {
+                    const matchesSearch = formateur.nom.toLowerCase().includes(searchTerm) ||
+                                          formateur.prenom.toLowerCase().includes(searchTerm) ||
+                                          formateur.code_formateur.toLowerCase().includes(searchTerm) ||
+                                          formateur.email.toLowerCase().includes(searchTerm);
+                    const matchesFilter = !filterValue || (formateur.domaine && formateur.domaine._id === filterValue);
+                    return matchesSearch && matchesFilter;
+                });
+
+                if (currentSort.field) {
+                    filteredFormateurs.sort((a, b) => {
+                        if (a[currentSort.field] < b[currentSort.field]) return currentSort.direction === 'asc' ? -1 : 1;
+                        if (a[currentSort.field] > b[currentSort.field]) return currentSort.direction === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+
+                tableBody.innerHTML = filteredFormateurs.map(formateur => `
+                    <tr>
+                        <td>${formateur.code_formateur}</td>
+                        <td>${formateur.nom}</td>
+                        <td>${formateur.prenom}</td>
+                        <td>${formateur.email}</td>
+                        <td>${formateur.telephone || 'N/A'}</td>
+                        <td>${formateur.domaine ? formateur.domaine.nom : 'N/A'}</td>
+                        <td>
+                            <a href="/formateurs/edit/${formateur._id}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="/formateurs/delete/${formateur._id}" method="POST" class="d-inline">
+                                <input type="hidden" name="_csrf" value="${document.querySelector('input[name="_csrf"]').value}">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce formateur ?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            searchInput.addEventListener('input', renderTable);
+            filterSelect.addEventListener('change', renderTable);
+
+            sortingHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const field = header.dataset.sort;
+                    if (currentSort.field === field) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.field = field;
+                        currentSort.direction = 'asc';
+                    }
+                    renderTable();
+                });
+            });
+
+            renderTable();
+        });
+    </script>
+</body>
+</html>

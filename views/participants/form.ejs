@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= participant ? 'Modifier' : 'Ajouter' %> un Participant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+
+    <div class="container mt-5">
+        <h1 class="mb-4"><%= participant ? 'Modifier' : 'Ajouter' %> un Participant</h1>
+        <form action="<%= participant ? `/participants/edit/${participant._id}` : '/participants/add' %>" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            
+            <div class="mb-3">
+                <label for="matricule" class="form-label">Matricule</label>
+                <input type="text" class="form-control" id="matricule" name="matricule" value="<%= participant ? participant.matricule : '' %>" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="nom" class="form-label">Nom</label>
+                <input type="text" class="form-control" id="nom" name="nom" value="<%= participant ? participant.nom : '' %>" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="prenom" class="form-label">Prénom</label>
+                <input type="text" class="form-control" id="prenom" name="prenom" value="<%= participant ? participant.prenom : '' %>" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="dateNaissance" class="form-label">Date de naissance</label>
+                <input type="date" class="form-control" id="dateNaissance" name="dateNaissance" value="<%= participant ? participant.dateNaissance.toISOString().split('T')[0] : '' %>" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="profil" class="form-label">Profil</label>
+                <select class="form-select" id="profil" name="profil" required>
+                    <option value="">Choisissez un profil</option>
+                    <% profils.forEach(profil => { %>
+                        <option value="<%= profil._id %>" <%= participant && participant.profil && participant.profil.equals(profil._id) ? 'selected' : '' %>>
+                            <%= profil.libelle %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary"><%= participant ? 'Modifier' : 'Ajouter' %> le participant</button>
+        </form>
+    </div>
+
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
